@@ -6,6 +6,9 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -175,7 +178,7 @@ public class PointCloudGL {
             glBindBuffer(GL_ARRAY_BUFFER, bufferId);
 
             //upload data to GL_ARRAY_BUFFER for drawing (allocates new memory)
-            glBufferData(GL_ARRAY_BUFFER, pointData, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, pointData, GL_DYNAMIC_DRAW);
 
             //enable using this vertex array as source for drawing
             glEnableVertexAttribArray(0);
@@ -209,8 +212,12 @@ public class PointCloudGL {
                 glBindVertexArray(vertexArrayId);
                 glBindBuffer(GL_ARRAY_BUFFER, bufferId);
 
-                //upload new data (without allocating new memory)
-                glBufferSubData(GL_ARRAY_BUFFER, 0, pointData);
+                //map the GL_ARRAY_BUFFER to a ByteBuffer
+                DoubleBuffer buff = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY).order(ByteOrder.nativeOrder()).asDoubleBuffer();
+                buff.put(pointData, 0, pointData.length);
+
+                //unmap the GL_ARRAY_BUFFER
+                glUnmapBuffer(GL_ARRAY_BUFFER);
 
                 //unbind vertex array
                 glBindVertexArray(0);
